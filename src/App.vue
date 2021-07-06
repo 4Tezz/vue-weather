@@ -1,30 +1,56 @@
 <template>
-  <div id="nav">
-    <router-link to="/">Home</router-link> |
-    <router-link to="/about">About</router-link>
+  <AppModal v-if="modal" :visibility="modal" @closeModal="modal = false" />
+  <div class="loader-box" v-if="loader">
+    <AppLoader color="text-primary" />
   </div>
-  <router-view/>
+  <div v-else>
+    <the-navbar @openModal="modal = true"></the-navbar>
+    <main>
+      <router-view v-slot="{ Component }">
+        <keep-alive>
+          <component :is="Component" />
+        </keep-alive>
+      </router-view>
+    </main>
+  </div>
 </template>
 
-<style lang="less">
-#app {
-  font-family: Avenir, Helvetica, Arial, sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  text-align: center;
-  color: #2c3e50;
-}
+<script>
+import TheNavbar from "@/components/TheNavbar.vue";
+import AppLoader from "@/components/ui/AppLoader.vue";
+import AppModal from "@/components/ui/AppModal.vue";
+import { useStore } from "vuex";
+import { onBeforeMount, ref } from "vue";
+export default {
+  setup() {
+    onBeforeMount(async () => {
+      const cordinate = await store.dispatch("location/loadLocation");
+      await store.dispatch("weather/loadWeather", cordinate);
+      store.dispatch("weather/updateWeather");
+      loader.value = false;
+    });
+    const store = useStore();
+    const loader = ref(true);
+    const modal = ref(false);
 
-#nav {
-  padding: 30px;
+    return {
+      loader,
+      modal,
+    };
+  },
+  components: { TheNavbar, AppLoader, AppModal },
+};
+</script>
 
-  a {
-    font-weight: bold;
-    color: #2c3e50;
-
-    &.router-link-exact-active {
-      color: #42b983;
-    }
-  }
+<style>
+.loader-box {
+  width: 100%;
+  height: 100vh;
+  background: #000000;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  position: absolute;
+  z-index: 99;
 }
 </style>
